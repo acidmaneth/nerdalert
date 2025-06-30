@@ -25,24 +25,10 @@ export default function ChatContainer() {
       
       // Use the same API base as the chat-api.ts
       const getApiBase = () => {
-        // Check for environment variable first
-        if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_NERDALERT_API_URL) {
-          return import.meta.env.VITE_NERDALERT_API_URL;
-        }
-        
-        // For local development
-        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-          return 'http://localhost:80';
-        }
-        
-        // For production - use the same domain as the frontend
-        if (typeof window !== 'undefined') {
-          return window.location.origin;
-        }
-        
-        // Fallback
-        return 'https://nerdalert.app';
-      };
+        return (process.env.WEBBASE_URL && process.env.WEBBASE_URL !== "/") ?
+        process.env.WEBBASE_URL :
+        window.location.protocol + "//" + window.location.host;
+      };      
       
       const initializeAgent = async () => {
         console.log("🚀 Starting 5-second initialization sequence...");

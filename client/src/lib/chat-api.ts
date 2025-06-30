@@ -8,23 +8,9 @@ declare global {
 }
 
 const getApiBase = () => {
-  // Check for environment variable first
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_NERDALERT_API_URL) {
-    return import.meta.env.VITE_NERDALERT_API_URL;
-  }
-  
-  // For local development - point to the server
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:80';
-  }
-  
-  // For production - use the same domain as the frontend (Vercel will proxy to Cloudflare)
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  
-  // Fallback
-  return 'https://nerdalert.app';
+  return (process.env.WEBBASE_URL && process.env.WEBBASE_URL !== "/") ?
+  process.env.WEBBASE_URL :
+  window.location.protocol + "//" + window.location.host;
 };
 
 const API_BASE = getApiBase();
@@ -56,7 +42,7 @@ export async function sendMessage(
   onStreamChunk?: (chunk: string) => void,
   onThinking?: (isThinking: boolean) => void
 ): Promise<SendMessageResponse> {
-  const response = await fetch(`${API_BASE}/prompt`, {
+  const response = await fetch(`${API_BASE}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
