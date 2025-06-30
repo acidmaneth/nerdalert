@@ -1,0 +1,57 @@
+{
+  "name": "nerdalert",
+  "version": "1.4.0",
+  "description": "A specialized AI agent for pop-culture enthusiasts with energy matching, conversation memory, enhanced date accuracy verification, RAG capabilities, and a modern React frontend",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:agent\" \"npm run dev:frontend\"",
+    "dev:agent": "tsx server/src/index.ts",
+    "dev:frontend": "vite client",
+    "build": "npm run build:agent && npm run build:frontend",
+    "build:agent": "tsc -p server/tsconfig.json",
+    "build:frontend": "vite build client",
+    "start": "node server/dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:agent": "jest --config server/jest.config.js",
+    "test:frontend": "jest --config client/jest.config.js",
+    "clean": "rm -rf server/dist client/dist node_modules",
+    "install:all": "npm install && npm run install:agent && npm run install:frontend",
+    "install:agent": "cd server && npm install",
+    "install:frontend": "cd client && npm install"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "pop-culture",
+    "nerd",
+    "geek",
+    "chatbot",
+    "localai",
+    "typescript",
+    "react",
+    "frontend"
+  ],
+  "author": "acidmaneth <your.email@example.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acidmaneth/nerdalert-project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acidmaneth/nerdalert-project/issues"
+  },
+  "homepage": "https://github.com/acidmaneth/nerdalert-project#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.7.3"
+  },
+  "workspaces": [
+    "server",
+    "client"
+  ]
+} 

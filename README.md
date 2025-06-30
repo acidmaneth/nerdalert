@@ -1,169 +1,171 @@
-# EAI - Enhanced AI Agent Development Platform
+# NerdAlert - AI Pop-Culture Agent
 
-A comprehensive platform for developing, testing, and deploying AI agents with local model support, conversation memory, and advanced prompt engineering capabilities.
+A comprehensive AI agent platform for pop-culture enthusiasts featuring a specialized AI agent with energy matching, conversation memory, enhanced date accuracy verification, RAG capabilities, and a modern React frontend.
 
 ## 🚀 Project Overview
 
-EAI is a full-stack AI agent development environment that includes:
+NerdAlert is a full-stack AI agent development platform that includes:
 
-- **NerdAlert**: A specialized pop-culture AI agent with web search, conversation memory, and adaptive personality
-- **LocalAI Integration**: Local model deployment and management
-- **Development Tools**: Cleanup scripts, testing utilities, and development guides
-- **Advanced Features**: Energy matching, conversation memory, and dynamic prompt engineering
+- **AI Agent Backend**: Specialized pop-culture AI with web search, conversation memory, and adaptive personality
+- **React Frontend**: Modern chat interface with cyberpunk theme and real-time streaming
+- **Advanced Features**: Energy matching, conversation memory, dynamic prompt engineering, and RAG integration
+- **LocalAI Support**: Local model deployment and management capabilities
 
 ## 📁 Project Structure
 
 ```
-EAI/
-├── NerdAlert/              # NerdAlert AI Agent Project
-│   ├── nerdalert-agent/    # NerdAlert AI Agent (Backend)
-│   ├── nerdalert-frontend/ # NerdAlert Frontend (React + Vite)
-│   └── README.md           # NerdAlert project documentation
-├── local-ai/               # LocalAI configuration and models
-├── agent-dev-guide/        # Development documentation
-├── cleanup-local-ai.sh     # System cleanup utility
-├── start-local-ai.sh       # LocalAI startup script
-└── README.md               # This file
+NerdAlert/
+├── server/                 # AI Agent Backend (Express + TypeScript)
+│   ├── src/               # Source code
+│   │   ├── index.ts       # Main server entry point
+│   │   ├── prompt/        # AI prompt handling and tools
+│   │   ├── rag/           # RAG (Retrieval-Augmented Generation)
+│   │   └── search-service.ts # Web search integration
+│   ├── test-*.js          # Test scripts for various features
+│   └── package.json       # Backend dependencies
+├── client/                # React Frontend (Vite + TypeScript)
+│   ├── src/               # Source code
+│   │   ├── components/    # React components
+│   │   ├── lib/           # Utilities and API client
+│   │   └── pages/         # Page components
+│   ├── public/            # Static assets
+│   └── package.json       # Frontend dependencies
+├── package.json           # Root package.json (workspace configuration)
+└── README.md              # This file
 ```
 
 ## 🎯 Key Features
 
-### NerdAlert Agent
+### AI Agent Backend
 - **Pop-Culture Expertise**: Deep knowledge of movies, TV, comics, tech, and geek culture
 - **Real-Time Information**: Web search integration for up-to-date facts and news
 - **Energy Matching**: Dynamically adapts to user's enthusiasm and emotional tone
 - **Conversation Memory**: Maintains context across conversations
-- **Spoiler Protection**: Automatic spoiler warnings and content filtering
-- **Event Tracking**: Conventions, premieres, theme park events, and fan gatherings
+- **Enhanced Accuracy**: Comprehensive date validation and fact verification
+- **RAG Integration**: Retrieval-Augmented Generation for improved responses
 
-### LocalAI Integration
-- **Local Model Support**: Run AI models locally without external dependencies
-- **Model Management**: Easy model switching and configuration
-- **Performance Optimization**: Optimized for local deployment
+### React Frontend
+- **Modern UI**: Cyberpunk-themed chat interface with real-time streaming
+- **Responsive Design**: Works on desktop and mobile devices
+- **Real-Time Chat**: Streaming responses with thinking indicators
+- **Wallet Integration**: Optional Ethereum wallet connectivity
+- **Sidebar Management**: Chat history and new chat functionality
 
-### Development Tools
-- **Cleanup Scripts**: Automated system cleanup and process management
-- **Testing Framework**: Comprehensive test suite for agent functionality
-- **Development Guides**: Step-by-step setup and customization instructions
+## 🔐 Security First
 
-## 🛠️ Recent Updates (v1.1.2)
+**⚠️ Important**: This project requires API keys for full functionality. All sensitive data is managed through environment variables.
 
-### ✨ New Features
-- **Energy Matching System**: Agent now dynamically matches user's enthusiasm and emotional tone
-- **Enhanced Conversation Memory**: Improved context retention and conversation flow
-- **Advanced Prompt Engineering**: More sophisticated system prompts with behavioral controls
-- **Web Search Integration**: Real-time information retrieval with Serper API
-- **Local Model Support**: Full compatibility with LocalAI for privacy-focused deployment
+### Required API Keys:
+- **LLM API Key**: For AI model interactions (OpenAI, LocalAI, etc.)
+- **Serper API Key**: For web search functionality (recommended)
+- **Brave API Key**: Alternative search provider (optional)
 
-### 🔧 Technical Improvements
-- **Bug Fixes**: Resolved tool call handling issues in chat.py
-- **Performance Optimization**: Improved response times and memory usage
-- **Error Handling**: Better error recovery and user feedback
-- **Code Quality**: Enhanced TypeScript types and code organization
+### Quick Security Setup:
+```bash
+# Copy environment templates
+cp server/env.example server/.env
+cp client/env.example client/.env
 
-### 📚 Documentation
-- **Comprehensive README**: Updated with installation and usage instructions
-- **Development Guides**: Added setup and customization documentation
-- **API Documentation**: Clear examples and endpoint descriptions
+# Edit with your API keys
+# See SECURITY_SETUP.md for detailed instructions
+```
 
-## 🚀 Quick Start
+📖 **For detailed security setup, see [SECURITY_SETUP.md](SECURITY_SETUP.md)**
+
+## 🛠️ Quick Start
 
 ### Prerequisites
 - Node.js (version 16 or higher)
-- Docker (for LocalAI)
-- Serper API key (for web search functionality)
+- npm or yarn package manager
 
 ### Installation
 
-1. **Clone the repository**:
+1. **Clone and install dependencies**:
    ```bash
-   git clone https://github.com/yourusername/EAI.git
-   cd EAI
+   git clone https://github.com/yourusername/nerdalert.git
+   cd nerdalert
+   npm run install:all
    ```
 
-2. **Set up LocalAI**:
+2. **Set up environment variables**:
    ```bash
-   chmod +x start-local-ai.sh
-   ./start-local-ai.sh
+   # Copy example environment files
+   cp client/env.example client/.env
+   cp server/env.example server/.env
+   
+   # Edit the files with your API keys
+   # - VITE_NERDALERT_API_URL (for frontend)
+   # - SERPER_API_KEY (for web search)
+   # - LLM_API_KEY (for AI model)
    ```
 
-3. **Start NerdAlert Agent**:
+3. **Start the development servers**:
    ```bash
-   cd NerdAlert/nerdalert-agent
-   npm install
+   # Start both backend and frontend
    npm run dev
+   
+   # Or start individually
+   npm run dev:agent    # Backend on http://localhost:80
+   npm run dev:frontend # Frontend on http://localhost:5050
    ```
 
-4. **Start NerdAlert Frontend**:
-   ```bash
-   cd NerdAlert/nerdalert-frontend
-   npm install
-   npm run dev
-   ```
+## 🎮 Usage
 
-## 🎮 Usage Examples
+### Development Mode
+- **Backend**: Runs on `http://localhost:80`
+- **Frontend**: Runs on `http://localhost:5050`
+- **API Endpoint**: `POST /prompt` for chat interactions
 
-### Basic Interaction
+### Production Build
 ```bash
-curl --location 'http://localhost:80/prompt' \
---header 'Content-Type: application/json' \
---data '{
-  "messages": [
-    {
-      "role": "user",
-      "content": "What are the latest Marvel movie updates?"
-    }
-  ]
-}'
+# Build both applications
+npm run build
+
+# Start production server
+npm start
 ```
 
-### Energy Matching Examples
-- **Excited User**: "OMG, did you see the new trailer?! 🔥🔥🔥"
-- **Calm User**: "What do you think about the new season?"
-- **Frustrated User**: "I can't believe they changed that character's backstory"
+## 🧪 Testing
 
-The agent will match your energy level and respond accordingly!
+```bash
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:agent      # Backend tests
+npm run test:frontend   # Frontend tests
+
+# Run specific feature tests
+npm run test-accuracy   # Accuracy improvements
+npm run test-cast-accuracy # Cast information accuracy
+npm run test-date-accuracy # Date validation
+```
 
 ## 🔧 Configuration
 
 ### Environment Variables
-- `PORT` - Server port (default: 80)
-- `LLM_API_KEY` - Your LLM API key
-- `LLM_BASE_URL` - LLM service URL
-- `MODEL` - AI model name
-- `SERPER_API_KEY` - Web search API key
-- `SYSTEM_PROMPT` - Override default system prompt
+
+**Frontend (.env)**:
+```bash
+VITE_NERDALERT_API_URL=http://localhost:80
+VITE_WALLET_ENABLED=false
+```
+
+**Backend (.env)**:
+```bash
+PORT=80
+LLM_API_KEY=your_llm_api_key
+LLM_BASE_URL=your_llm_base_url
+SERPER_API_KEY=your_serper_api_key
+MODEL=your_model_name
+```
 
 ### Customizing the Agent
-Edit `NerdAlert/agent/src/system-prompt.txt` to customize:
+Edit `server/src/system-prompt.txt` to customize:
 - Personality traits
 - Energy matching behavior
 - Communication style
 - Special interests and knowledge areas
-
-## 🧪 Testing
-
-Run the test suite:
-```bash
-cd NerdAlert/agent
-npm test
-```
-
-## 🛠️ Development
-
-### Available Commands
-- `npm run dev` — Start NerdAlert in development mode
-- `npm run start` — Start NerdAlert in production mode
-- `npm test` — Run tests
-
-### Cleanup and Maintenance
-```bash
-# Clean up all processes and files
-./cleanup-local-ai.sh
-
-# Start LocalAI fresh
-./start-local-ai.sh
-```
 
 ## 📊 Performance
 
@@ -171,6 +173,19 @@ npm test
 - **Memory Usage**: Optimized for local deployment
 - **Scalability**: Designed for single-user to small-group usage
 - **Reliability**: Robust error handling and recovery
+
+## 🚀 Deployment
+
+### Vercel Deployment (Frontend)
+1. Connect your GitHub repository to Vercel
+2. Set root directory to `client`
+3. Configure environment variables
+4. Deploy automatically on push
+
+### Backend Deployment
+- **LocalAI**: For privacy-focused local deployment
+- **Cloudflare Workers**: For edge deployment
+- **Traditional VPS**: For full control
 
 ## 🤝 Contributing
 
@@ -195,17 +210,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support, questions, or feature requests:
 - Open an issue on GitHub
-- Check the documentation in `agent-dev-guide/`
-- Review the troubleshooting section in the NerdAlert README
-
-## [1.3.3] - 2024-07-26
-
-### ✨ Stable Build & Streaming UX Polish
-- Main chat bubble now only shows content after the last </think> tag, preserving all formatting and markdown.
-- "Thinking"/internal agent thoughts are never shown in the main chat bubble, only in the collapsible "Show Thinking" section.
-- The "THINKING..." animation is shown while the agent is still thinking, and the main answer appears as soon as it starts streaming in.
-- The welcome/intro message is always shown in full, with all formatting preserved.
-- This is the **current stable build** and recommended for production use.
+- Check the documentation in the respective directories
+- Review the troubleshooting guides
 
 ---
 

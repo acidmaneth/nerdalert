@@ -11,8 +11,11 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Build outputs
+dist/
+build/
+
 # Virtual environments
-local_ai/
 venv/
 env/
 
@@ -58,9 +61,13 @@ temp/
 package-lock.json
 yarn.lock
 
-# Build outputs
-dist/
-build/
+# Client-specific
+client/dist/
+client/.env
+
+# Server-specific
+server/dist/
+server/.env
 
 # External repositories
 agent-dev-guide/
