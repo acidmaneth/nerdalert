@@ -9,18 +9,9 @@ declare global {
 
 // Determine the API base URL based on environment
 const getApiBase = () => {
-  // For production, use the Cloudflare setup
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_NERDALERT_API_URL) {
-    return import.meta.env.VITE_NERDALERT_API_URL;
-  }
-  
-  // Development fallback
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:80';
-  }
-  
-  // Production fallback - your Cloudflare setup
-  return 'https://nerdalert.app';
+  return (process.env.WEBBASE_URL && process.env.WEBBASE_URL !== "/") ?
+  process.env.WEBBASE_URL :
+  window.location.protocol + "//" + window.location.host;
 };
 
 const API_BASE = getApiBase();

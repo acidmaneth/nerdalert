@@ -7,12 +7,15 @@ import { prompt } from "./prompt/index.js";
 import type { PromptPayload } from "./prompt/types.js";
 import { conversationMemory } from "./prompt/conversation-memory.js";
 import { PORT, NODE_ENV } from "./constants.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import { startServer } from "agent-server-definition";
 
-const app = express();
+// const app = express();
 const port = PORT;
 
 // Security middleware
-app.use(helmet());
+// app.use(helmet());
 
 const allowedOrigins = [
   'http://localhost:5050',
@@ -29,18 +32,13 @@ const allowedOrigins = [
   /https?:\/\/[a-zA-Z0-9-]+\.ngrok-free\.app$/,
 ];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.use(express.json({ limit: "50mb" }));
-
-// Basic health check
-app.get("/health", (req: Request, res: Response) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+// app.use(cors({
+//   origin: allowedOrigins,
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
+// app.use(express.json({ limit: "50mb" }));
 
 type ExtendedPromptPayload = PromptPayload & {
   ping?: boolean;
@@ -50,6 +48,10 @@ type ExtendedPromptPayload = PromptPayload & {
 interface StreamResponse extends Response {
   flush?: () => void;
 }
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const staticDir = path.join(__dirname, "../../client/dist");
 
 const handlePrompt = async (req: Request, res: StreamResponse) => {
   const payload: ExtendedPromptPayload = req.body;
@@ -191,54 +193,165 @@ const handlePromptSync = async (req: Request, res: Response) => {
   }
 };
 
-app.post("/prompt", handlePrompt);
-app.post("/prompt-sync", handlePromptSync);
+const appServerConfig = {
+  enableStaticServing: true,
+  staticDir: staticDir,
+  staticUrlPath: "/",
+  is404Redirect: false,
+  esBuildPlugins: [
+    {
+      name: "inject-env",
+      setup(build: any) {
+        build.onLoad({ filter: /\.(js|ts)$/ }, async (args: any) => {
+          const fs = await import("fs/promises");
+          const contents = await fs.readFile(args.path, "utf8");
 
-app.post("/start", (req: Request, res: StreamResponse) => {
-  // Use the same handler as /prompt, but with an empty message payload
-  // to trigger the agent's introduction.
-  req.body = { messages: [] };
-  handlePrompt(req, res);
-});
+          const injected = contents.replace(/process\.env\.(\w+)/g, (_, name) =>
+            JSON.stringify(process.env[name] || "")
+          );
 
-// Memory management endpoints
-app.get("/memory/:sessionId", (req: Request, res: Response) => {
-  const { sessionId } = req.params;
-  const memory = conversationMemory.getMemory(sessionId);
-  if (memory) {
-    res.json({
-      sessionId,
-      discussedTopics: Array.from(memory.discussedTopics),
-      recentMessages: memory.recentMessages,
-      lastUpdate: memory.lastUpdate
-    });
-  } else {
-    res.status(404).json({ error: "Session not found" });
-  }
-});
+          return {
+            contents: injected,
+            loader: "ts",
+          };
+        });
+      },
+    },
+  ],
+  extendedRoutes: [
+    {
+      path: "/health",
+      method: "GET",
+      handler: (req: Request, res: Response) => {
+        res.json({ status: "ok", timestamp: new Date().toISOString() });
+      }
+    },
+    {
+      path: "/chat",
+      method: "POST",
+      handler: handlePrompt,
+    },
+    {
+      path: "/prompt-sync",
+      method: "POST",
+      handler: handlePromptSync,
+    },
+    {
+      path: "/start",
+      method: "POST",
+      handler: (req: Request, res: StreamResponse) => {
+        // Use the same handler as /prompt, but with an empty message payload
+        // to trigger the agent's introduction.
+        req.body = { messages: [] };
+        handlePrompt(req, res);
+      },
+    },
+    {
+      path: "/memory/:sessionId",
+      method: "GET",
+      handler: (req: Request, res: Response) => {
+        const { sessionId } = req.params;
+        const memory = conversationMemory.getMemory(sessionId);
+        if (memory) {
+          res.json({
+            sessionId,
+            discussedTopics: Array.from(memory.discussedTopics),
+            recentMessages: memory.recentMessages,
+            lastUpdate: memory.lastUpdate
+          });
+        } else {
+          res.status(404).json({ error: "Session not found" });
+        }
+      },
+    },
+    {
+      path: "/memory/:sessionId",
+      method: "DELETE",
+      handler: (req: Request, res: Response) => {
+        const { sessionId } = req.params;
+        conversationMemory.clearSession(sessionId);
+        res.json({ message: "Session memory cleared" });
+      },
+    },
+    {
+      path: "/memory",
+      method: "GET",
+      handler: (req: Request, res: Response) => {
+        // Return a list of active sessions (for debugging)
+        res.json({ message: "Memory management endpoints available" });
+      },
+    },
+  ],
+};
 
-app.delete("/memory/:sessionId", (req: Request, res: Response) => {
-  const { sessionId } = req.params;
-  conversationMemory.clearSession(sessionId);
-  res.json({ message: "Session memory cleared" });
-});
+const agentServerConfig = {
+  enableStaticServing: false,
+  staticDir: staticDir,
+  staticUrlPath: "/",
+  is404Redirect: false,
+  extendedRoutes: [
+    {
+      path: "/prompt",
+      method: "POST",
+      handler: (req: any, res: any) => {
+        const iframe =
+          '<iframe width="560" height="315" src="https://www.youtube.com/embed/JCPy_Kkq6jw?si=mrcX05MklsYDdiV7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+        res.json({
+          id: "chatcmpl-123123123",
+          object: "chat.completion",
+          created: 1700000000,
+          model: "local-model",
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: "assistant",
+                reasoning_content: null,
+                content: iframe,
+                tool_calls: [],
+              },
+              logprobs: null,
+              finish_reason: "stop",
+              stop_reason: null,
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            total_tokens: 30,
+            completion_tokens: 20,
+            prompt_tokens_details: null,
+          },
+          prompt_logprobs: null,
+        });
+      },
+    },
+    {
+      path: "/processing-url",
+      method: "GET",
+      handler: (req: any, res: any) => {
+        res.json({
+          url: "http://localhost:8080",
+          status: "ready",
+        });
+      },
+    },
+  ],
+};
 
-app.get("/memory", (req: Request, res: Response) => {
-  // Return a list of active sessions (for debugging)
-  res.json({ message: "Memory management endpoints available" });
-});
+startServer(8080, (() => {}) as any, appServerConfig as any);
+startServer(Number(port), (() => {}) as any, agentServerConfig as any);
 
 // Global error handler
-app.use((err: Error, req: Request, res: Response, next: Function) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({
-    error: err.message,
-    stack: NODE_ENV === "production" ? undefined : err.stack,
-  });
-});
+// app.use((err: Error, req: Request, res: Response, next: Function) => {
+//   console.error("Unhandled error:", err);
+//   res.status(500).json({
+//     error: err.message,
+//     stack: NODE_ENV === "production" ? undefined : err.stack,
+//   });
+// });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-  console.log(`Environment: ${NODE_ENV || "development"}`);
-});
+// app.listen(port, () => {
+//   console.log(`Server running on http://localhost:${port}`);
+//   console.log(`Environment: ${NODE_ENV || "development"}`);
+// });
