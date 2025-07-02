@@ -177,8 +177,8 @@ npm run dev
 
 ### Environment Variables in Production
 
-**Vercel (Frontend):**
-- Set environment variables in Vercel dashboard
+**Frontend Deployment:**
+- Set environment variables in your deployment platform dashboard
 - Use `VITE_` prefix for client-side variables
 
 **Backend Deployment:**

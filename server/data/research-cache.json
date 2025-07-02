@@ -1,68 +1,7 @@
 {
-  "correction_1751222892370_pugw1hhg0": {
-    "id": "correction_1751222892370_pugw1hhg0",
-    "query": "Spider-Man MCU actor",
-    "searchType": "character",
-    "results": [
-      {
-        "id": "spiderman-origin-comics",
-        "title": "Spider-Man Origin Story",
-        "content": "Peter Parker was bitten by a radioactive spider and gained spider-like abilities. First appeared in Amazing Fantasy #15 (1962).",
-        "category": "character",
-        "franchise": "Marvel",
-        "status": "established",
-        "verified": true,
-        "sources": [
-          "marvel.com",
-          "marvel.fandom.com"
-        ],
-        "lastUpdated": "2024-01-01",
-        "confidence": "HIGH",
-        "canonStatus": "CANON",
-        "tags": [
-          "origin",
-          "radioactive",
-          "spider",
-          "uncle_ben"
-        ],
-        "triviaType": "origin"
-      },
-      {
-        "id": "star-wars-luke-skywalker",
-        "title": "Luke Skywalker Character",
-        "content": "Luke Skywalker is the son of Anakin Skywalker and Padmé Amidala. He was raised on Tatooine by Owen and Beru Lars.",
-        "category": "character",
-        "franchise": "Star Wars",
-        "status": "established",
-        "verified": true,
-        "sources": [
-          "starwars.com",
-          "wookieepedia.org"
-        ],
-        "lastUpdated": "2024-01-01",
-        "confidence": "HIGH",
-        "canonStatus": "CANON",
-        "tags": [
-          "jedi",
-          "force",
-          "tatooine",
-          "vader"
-        ],
-        "triviaType": "origin"
-      }
-    ],
-    "confidence": "HIGH",
-    "sources": [
-      "marvel.com",
-      "marvel.fandom.com",
-      "starwars.com",
-      "wookieepedia.org"
-    ],
-    "cachedAt": "2025-06-29T18:48:12.370Z",
-    "expiresAt": "2025-06-30T18:48:12.370Z",
-    "hitCount": 4,
-    "lastAccessed": "2025-06-29T20:09:33.689Z"
-  },
+  "_comment": "Research cache cleared - using Google Search API for current information",
+  "_lastCleared": "2025-01-27T00:00:00.000Z",
+  "_note": "All cached data removed to prevent stale information conflicts",
   "correction_1751222951827_aqi4uw63e": {
     "id": "correction_1751222951827_aqi4uw63e",
     "query": "latest Marvel movie 2025",

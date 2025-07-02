@@ -9,13 +9,13 @@ import { conversationMemory } from "./prompt/conversation-memory.js";
 import { PORT, NODE_ENV } from "./constants.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { startServer } from "agent-server-definition";
+// import { startServer } from "agent-server-definition";
 
-// const app = express();
+const app = express();
 const port = PORT;
 
 // Security middleware
-// app.use(helmet());
+app.use(helmet());
 
 const allowedOrigins = [
   'http://localhost:5050',
@@ -24,21 +24,20 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
-  'https://nerdalert.app',
-  'https://www.nerdalert.app',
-  // Regex to match Vercel deployment URLs
-  /https:\/\/nerdalert-project-.*-acidmans-projects\.vercel\.app$/,
+  'https://your-deployed-agent.com',
+  'https://www.your-deployed-agent.com',
+
   // Regex to match ngrok free URLs
   /https?:\/\/[a-zA-Z0-9-]+\.ngrok-free\.app$/,
 ];
 
-// app.use(cors({
-//   origin: allowedOrigins,
-//   credentials: true,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
-// app.use(express.json({ limit: "50mb" }));
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json({ limit: "50mb" }));
 
 type ExtendedPromptPayload = PromptPayload & {
   ping?: boolean;
@@ -338,20 +337,62 @@ const agentServerConfig = {
   ],
 };
 
-startServer(8080, (() => {}) as any, appServerConfig as any);
-startServer(Number(port), (() => {}) as any, agentServerConfig as any);
+// startServer(8080, (() => {}) as any, appServerConfig as any);
+// startServer(Number(port), (() => {}) as any, agentServerConfig as any);
 
 // Global error handler
-// app.use((err: Error, req: Request, res: Response, next: Function) => {
-//   console.error("Unhandled error:", err);
-//   res.status(500).json({
-//     error: err.message,
-//     stack: NODE_ENV === "production" ? undefined : err.stack,
-//   });
-// });
+app.use((err: Error, req: Request, res: Response, next: Function) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({
+    error: err.message,
+    stack: NODE_ENV === "production" ? undefined : err.stack,
+  });
+});
+
+// Add routes
+app.get("/health", (req: Request, res: Response) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+app.post("/chat", handlePrompt);
+app.post("/prompt", handlePrompt);
+app.post("/prompt-sync", handlePromptSync);
+
+app.post("/start", (req: Request, res: StreamResponse) => {
+  // Use the same handler as /prompt, but with an empty message payload
+  // to trigger the agent's introduction.
+  req.body = { messages: [] };
+  handlePrompt(req, res);
+});
+
+app.get("/memory/:sessionId", (req: Request, res: Response) => {
+  const { sessionId } = req.params;
+  const memory = conversationMemory.getMemory(sessionId);
+  if (memory) {
+    res.json({
+      sessionId,
+      discussedTopics: Array.from(memory.discussedTopics),
+      recentMessages: memory.recentMessages,
+      lastUpdate: memory.lastUpdate
+    });
+  } else {
+    res.status(404).json({ error: "Session not found" });
+  }
+});
+
+app.delete("/memory/:sessionId", (req: Request, res: Response) => {
+  const { sessionId } = req.params;
+  conversationMemory.clearSession(sessionId);
+  res.json({ message: "Session memory cleared" });
+});
+
+app.get("/memory", (req: Request, res: Response) => {
+  // Return a list of active sessions (for debugging)
+  res.json({ message: "Memory management endpoints available" });
+});
 
 // Start the server
-// app.listen(port, () => {
-//   console.log(`Server running on http://localhost:${port}`);
-//   console.log(`Environment: ${NODE_ENV || "development"}`);
-// });
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Environment: ${NODE_ENV || "development"}`);
+});

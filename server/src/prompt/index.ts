@@ -8,16 +8,13 @@ import { ChatCompletionChunk, ChatCompletionMessageParam } from "openai/resource
 import type { PromptPayload } from "./types.js";
 import { conversationMemory, extractTopicsFromMessage, analyzeAgentResponse, detectCorrection } from "./conversation-memory.js";
 import { RAGService } from "../rag/rag-service.js";
-import { performWebSearch, performEnhancedSearch, searchForMovieInfo, searchForActorInfo, searchForLatestNews, searchForWikiInfo } from "../search-service.js";
+import { performWebSearch, performEnhancedSearch, searchForMovieInfo, searchForActorInfo, searchForLatestNews, searchForWikiInfo, verifyRumorOrRelease, storeVerifiedResultInRAG } from "../search-service.js";
 import {
   MODEL,
   LLM_API_KEY,
   LLM_BASE_URL,
   SYSTEM_PROMPT,
   SEARCH_PROVIDER,
-  BRAVE_API_KEY,
-  SERPER_API_KEY,
-  SEARCH_FALLBACK_ENABLED,
   SEARCH_TIMEOUT,
   SEARCH_MAX_RETRIES,
 } from "../constants.js";
@@ -51,21 +48,19 @@ const systemPrompt =
 const getCurrentDateTime = () => {
   const now = new Date();
   return {
-    date: now.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }),
-    time: now.toLocaleTimeString('en-US', { 
-      hour12: true, 
-      timeZoneName: 'short' 
-    }),
-    iso: now.toISOString(),
     year: now.getFullYear(),
     month: now.getMonth() + 1,
     day: now.getDate(),
-    timestamp: now.getTime()
+    hour: now.getHours(),
+    minute: now.getMinutes(),
+    second: now.getSeconds(),
+    timezone: 'UTC',
+    fullDate: now.toISOString(),
+    formattedDate: now.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   };
 };
 
@@ -73,26 +68,25 @@ const currentDateTime = getCurrentDateTime();
 
 // Enhanced date validation function
 const validateDateAccuracy = (mentionedDate: string, context: string): string => {
-  const currentYear = currentDateTime.year;
-  const currentMonth = currentDateTime.month;
+  const currentYear = new Date().getFullYear();
   
   // Extract year from mentioned date
-  const yearMatch = mentionedDate.match(/\b(19|20)\d{2}\b/);
-  if (yearMatch) {
-    const year = parseInt(yearMatch[0]);
-    
-    // Check if year is in the future
-    if (year > currentYear) {
-      return `DATE VALIDATION WARNING: The year ${year} mentioned in "${context}" is in the future. Current year is ${currentYear}. This may be a prediction, rumor, or error.`;
-    }
-    
-    // Check if year is too far in the past for current events
-    if (year < currentYear - 50 && context.toLowerCase().includes('current') || context.toLowerCase().includes('latest')) {
-      return `DATE VALIDATION WARNING: The year ${year} mentioned in "${context}" seems outdated for current information. Current year is ${currentYear}.`;
-    }
+  const yearMatch = mentionedDate.match(/\b(20\d{2})\b/);
+  if (!yearMatch) return 'No year found in date';
+  
+  const mentionedYear = parseInt(yearMatch[1]);
+  
+  // Check if it's a future year
+  if (mentionedYear > currentYear) {
+    return `WARNING: Future year ${mentionedYear} mentioned (current year is ${currentYear}) - may be speculation or prediction`;
   }
   
-  return "";
+  // Check if it's a past year but being discussed as future
+  if (mentionedYear < currentYear && context.toLowerCase().includes('upcoming')) {
+    return `WARNING: Past year ${mentionedYear} mentioned as upcoming (current year is ${currentYear}) - information may be outdated`;
+  }
+  
+  return 'Date appears accurate';
 };
 
 // NEW: Enhanced date validation with cross-referencing
@@ -102,49 +96,82 @@ const validateAndCrossReferenceDates = async (content: string, searchResults: an
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
 }> => {
   const warnings: string[] = [];
-  let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM';
+  const currentYear = new Date().getFullYear();
   
-  // Extract all years mentioned in content
-  const yearMatches = content.match(/\b(19|20)\d{2}\b/g) || [];
-  const uniqueYears = [...new Set(yearMatches)].map(y => parseInt(y));
+  // Extract all dates from content
+  const datePatterns = [
+    /\b(20\d{2})\b/g, // Years
+    /(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/gi, // Month Year
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/g // MM/DD/YYYY
+  ];
   
-  // Extract movie titles and cast information
-  const movieTitles = extractMovieTitles(content);
-  const castInfo = extractCastInfo(content);
-  
-  // Validate each year against current year
-  for (const year of uniqueYears) {
-    if (year > currentDateTime.year) {
-      warnings.push(`FUTURE DATE WARNING: Year ${year} is in the future. Current year is ${currentDateTime.year}.`);
-      confidence = 'LOW';
-    }
-  }
-  
-  // Cross-reference movie titles with release dates
-  for (const title of movieTitles) {
-    const titleValidation = await crossReferenceMovieTitle(title, searchResults);
-    if (titleValidation.warning) {
-      warnings.push(titleValidation.warning);
-      if (titleValidation.confidence === 'LOW') confidence = 'LOW';
-    }
-  }
-  
-  // Cross-reference cast information with movie titles
-  for (const cast of castInfo) {
-    const castValidation = await crossReferenceCastInfo(cast, searchResults);
-    if (castValidation.warning) {
-      warnings.push(castValidation.warning);
-      if (castValidation.confidence === 'LOW') confidence = 'LOW';
-    }
-  }
-  
-  // Add validation warnings to content if any
   let validatedContent = content;
-  if (warnings.length > 0) {
-    validatedContent += `\n\n⚠️ DATE VALIDATION WARNINGS:\n${warnings.map(w => `• ${w}`).join('\n')}`;
+  let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = 'HIGH';
+  
+  // Check each date pattern
+  for (const pattern of datePatterns) {
+    const matches = content.match(pattern);
+    if (matches) {
+      for (const match of matches) {
+        const yearMatch = match.match(/\b(20\d{2})\b/);
+        if (yearMatch) {
+          const year = parseInt(yearMatch[1]);
+          
+          // Check for future years
+          if (year > currentYear) {
+            warnings.push(`Future year ${year} detected - may be speculation`);
+            confidence = 'MEDIUM';
+          }
+          
+          // Check for very old years in current context
+          if (year < currentYear - 10 && content.toLowerCase().includes('latest')) {
+            warnings.push(`Old year ${year} mentioned in 'latest' context - may be outdated`);
+            confidence = 'MEDIUM';
+          }
+        }
+      }
+    }
   }
   
-  return { validatedContent, warnings, confidence };
+  // Cross-reference with search results
+  if (searchResults.length > 0) {
+    const searchResultDates = searchResults.flatMap(result => {
+      const dates: string[] = [];
+      const text = `${result.title} ${result.snippet}`;
+      
+      for (const pattern of datePatterns) {
+        const matches = text.match(pattern);
+        if (matches) dates.push(...matches);
+      }
+      
+      return dates;
+    });
+    
+    // Check for date conflicts
+    const contentDates = content.match(/\b(20\d{2})\b/g) || [];
+    const searchDates = searchResultDates.map(date => {
+      const match = date.match(/\b(20\d{2})\b/);
+      return match ? parseInt(match[1]) : null;
+    }).filter((year): year is number => year !== null);
+    
+    if (contentDates.length > 0 && searchDates.length > 0) {
+      const contentYears = contentDates.map(d => parseInt(d));
+      const hasConflict = contentYears.some(year => 
+        !searchDates.includes(year) && Math.abs(year - Math.max(...searchDates)) > 1
+      );
+      
+      if (hasConflict) {
+        warnings.push('Date conflict detected between content and search results');
+        confidence = 'MEDIUM';
+      }
+    }
+  }
+  
+  return {
+    validatedContent,
+    warnings,
+    confidence
+  };
 };
 
 // NEW: Extract movie titles from content
@@ -449,7 +476,7 @@ const systemPromptWithDate = (sessionId?: string, userMessage?: string) => {
   
   return `${systemPrompt}
 
-CURRENT CONTEXT: Today is ${currentDateTime.date}, ${currentDateTime.year}
+CURRENT CONTEXT: Today is ${currentDateTime.formattedDate}, ${currentDateTime.year}
 
 ACCURACY RULES:
 - Always search for current information, especially for dates and cast details
@@ -532,6 +559,61 @@ export const prompt = async (
     },
     ...(payload.messages as Array<ChatCompletionMessageParam>),
   ];
+
+  // NEW: Auto-verify movie/show mentions in user message
+  if (payload.messages && payload.messages.length > 0) {
+    const lastMessage = payload.messages[payload.messages.length - 1];
+    if (lastMessage.role === "user" && typeof lastMessage.content === "string") {
+      try {
+        const verificationResult = await autoVerifyMovieMentions(lastMessage.content);
+        
+        if (verificationResult.verifiedMentions.length > 0) {
+          console.log(`Auto-verified ${verificationResult.verifiedMentions.length} movie/show mentions`);
+          
+          // Add verification context to the system prompt
+          let verificationContext = "\n\n🎬 MOVIE/SHOW VERIFICATION RESULTS:\n";
+          
+          verificationResult.verifiedMentions.forEach(mention => {
+            if (!mention.isRumor) {
+              verificationContext += `✅ "${mention.title}": ${mention.actualStatus} (${mention.confidence} confidence)\n`;
+              mention.corrections.forEach(correction => {
+                verificationContext += `   📝 Correction: ${correction}\n`;
+              });
+            } else {
+              verificationContext += `❓ "${mention.title}": Status unclear - may be rumor/speculation\n`;
+            }
+          });
+          
+          if (verificationResult.warnings.length > 0) {
+            verificationContext += "\n⚠️ VERIFICATION WARNINGS:\n";
+            verificationResult.warnings.forEach(warning => {
+              verificationContext += `• ${warning}\n`;
+            });
+          }
+          
+          // Store verification results in memory for future reference
+          verificationResult.verifiedMentions.forEach(mention => {
+            if (!mention.isRumor) {
+              conversationMemory.addCorrection(sessionId, {
+                originalClaim: `${mention.title} is a rumor`,
+                correctedInfo: `${mention.title} is actually ${mention.actualStatus}`,
+                topic: "Movie/Show Status",
+                confidence: mention.confidence
+              });
+            }
+          });
+          
+          // Update the system message with verification context
+          initialMessages[0] = {
+            role: "system",
+            content: initialMessages[0].content + verificationContext,
+          };
+        }
+      } catch (error) {
+        console.error("Auto-verification failed:", error);
+      }
+    }
+  }
 
   try {
     // === First Call to LLM: Decide if a tool is needed ===
@@ -1589,6 +1671,109 @@ function selectSourcesForQuery(query: string, type: string = "general"): string[
   return [...new Set(sources)];
 }
 
+// NEW: Enhanced rumor verification for movies and TV shows
+async function verifyMovieOrShowStatus(title: string): Promise<{
+  isRumor: boolean;
+  actualStatus: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  sources: string[];
+  corrections: string[];
+  warnings: string[];
+}> {
+  console.log(`Verifying movie/show status: ${title}`);
+  
+  try {
+    const verification = await verifyRumorOrRelease(title);
+    return verification;
+  } catch (error) {
+    return {
+      isRumor: true,
+      actualStatus: 'Unknown',
+      confidence: 'LOW',
+      sources: [],
+      corrections: [],
+      warnings: [`Verification failed: ${(error as Error).message}`]
+    };
+  }
+}
+
+// NEW: Auto-detect and verify movie/show mentions in queries
+async function autoVerifyMovieMentions(userMessage: string): Promise<{
+  verifiedMentions: Array<{
+    title: string;
+    isRumor: boolean;
+    actualStatus: string;
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+    corrections: string[];
+  }>;
+  warnings: string[];
+}> {
+  console.log(`Auto-verifying movie mentions in: ${userMessage}`);
+  
+  const verifiedMentions: Array<{
+    title: string;
+    isRumor: boolean;
+    actualStatus: string;
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+    corrections: string[];
+  }> = [];
+  const warnings: string[] = [];
+  
+  // Extract potential movie/show titles
+  const movieTitles = extractMovieTitles(userMessage);
+  
+  // Also look for common movie/show patterns
+  const moviePatterns = [
+    /(Deadpool|Avengers|Spider-Man|Batman|Superman|Wonder Woman|Black Panther|Iron Man|Captain America|Thor|Hulk|X-Men|Fantastic Four|Guardians of the Galaxy|Doctor Strange|Black Widow|Shang-Chi|Eternals|Ant-Man|Captain Marvel|Ms\. Marvel|She-Hulk|Moon Knight|Hawkeye|Loki|WandaVision|Falcon|Winter Soldier|Vision|Scarlet Witch|Quicksilver|War Machine|Falcon|Bucky|Sam Wilson|Steve Rogers|Tony Stark|Peter Parker|Bruce Banner|Natasha Romanoff|Clint Barton|Scott Lang|Carol Danvers|Kamala Khan|Jennifer Walters|Marc Spector|Steven Grant|Jake Lockley|Kate Bishop|Yelena Belova|Kate Bishop|America Chavez|Riri Williams|Shuri|Okoye|M'Baku|Namor|Attuma|Namora|Kang|He Who Remains|Victor Timely|Rama-Tut|Immortus|The Beyonder|Galactus|Silver Surfer|Doctor Doom|Magneto|Professor X|Cyclops|Jean Grey|Storm|Wolverine|Rogue|Gambit|Nightcrawler|Colossus|Kitty Pryde|Emma Frost|Beast|Angel|Iceman|Jubilee|Psylocke|Archangel|Cable|Deadpool|Domino|Negasonic Teenage Warhead|Yukio|Firefist|Russell|Vanessa|Weasel|Blind Al|Dopinder|Shatterstar|Bedlam|Zeitgeist|Lucky|Peter|Yashida|Viper|Silver Samurai|Harada|Shingen|Mariko|Logan|Laura|X-23|Gabriela|Rictor|Shatterstar|Boom-Boom|Sunspot|Cannonball|Mirage|Wolfsbane|Karma|Magik|Magma|Cypher|Warlock|Doug|Illyana|Amara|Roberto|Sam|Dani|Rahne|Xi'an|Piotr|Ororo|Kurt|Kitty|Emma|Hank|Warren|Bobby|Jubilee|Betsy|Warren|Scott|Jean|Logan|Charles|Erik|Raven|Mystique|Azazel|Destiny|Rogue|Gambit|Nightcrawler|Colossus|Kitty Pryde|Emma Frost|Beast|Angel|Iceman|Jubilee|Psylocke|Archangel|Cable|Deadpool|Domino|Negasonic Teenage Warhead|Yukio|Firefist|Russell|Vanessa|Weasel|Blind Al|Dopinder|Shatterstar|Bedlam|Zeitgeist|Lucky|Peter|Yashida|Viper|Silver Samurai|Harada|Shingen|Mariko|Logan|Laura|X-23|Gabriela|Rictor|Shatterstar|Boom-Boom|Sunspot|Cannonball|Mirage|Wolfsbane|Karma|Magik|Magma|Cypher|Warlock|Doug|Illyana|Amara|Roberto|Sam|Dani|Rahne|Xi'an|Piotr|Ororo|Kurt|Kitty|Emma|Hank|Warren|Bobby|Jubilee|Betsy|Warren|Scott|Jean|Logan|Charles|Erik|Raven|Mystique|Azazel|Destiny)\s+\d+/gi,
+    /(The\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g,
+    /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+[A-Z][a-z]+)/g
+  ];
+  
+  const allTitles = new Set<string>();
+  
+  // Add extracted titles
+  movieTitles.forEach(title => allTitles.add(title));
+  
+  // Add pattern matches
+  moviePatterns.forEach(pattern => {
+    const matches = userMessage.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        if (match.length > 3 && match.length < 100) {
+          allTitles.add(match.trim());
+        }
+      });
+    }
+  });
+  
+  // Verify each title
+  for (const title of allTitles) {
+    try {
+      const verification = await verifyMovieOrShowStatus(title);
+      
+      verifiedMentions.push({
+        title,
+        isRumor: verification.isRumor,
+        actualStatus: verification.actualStatus,
+        confidence: verification.confidence,
+        corrections: verification.corrections
+      });
+      
+      // Add warnings for low confidence or corrections
+      if (verification.confidence === 'LOW') {
+        warnings.push(`Low confidence for "${title}": ${verification.actualStatus}`);
+      }
+      
+      verification.warnings.forEach(warning => warnings.push(warning));
+      
+    } catch (error) {
+      console.error(`Failed to verify ${title}:`, error);
+    }
+  }
+  
+  return { verifiedMentions, warnings };
+}
+
 // NEW: Enhanced fact verification with multiple source types
 async function verifyFactWithMultipleSources(claim: string, context: string): Promise<{
   verified: boolean;
@@ -2250,6 +2435,35 @@ async function smart_search(query: string, type: string = "general"): Promise<st
       response += `   ${result.snippet}\n`;
       response += `   Source: ${result.link}\n\n`;
     });
+    
+    // Store high-quality results in RAG for future use
+    if (searchResult.qualityScore >= 70 && searchResult.results.length > 0) {
+      console.log('🔍 Storing high-quality search results in RAG...');
+      
+      // Store top 3 results that meet quality criteria
+      const topResults = searchResult.results.slice(0, 3).filter(result => {
+        const domain = result.link.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+        return domain.includes('marvel.com') || domain.includes('dc.com') || 
+               domain.includes('imdb.com') || domain.includes('variety.com') ||
+               domain.includes('hollywoodreporter.com') || domain.includes('disney.com');
+      });
+      
+      for (const result of topResults) {
+        try {
+          // Determine category and franchise from query
+          const category = type === 'character' ? 'character' : 
+                          type === 'canon' ? 'canon_info' : 'movie';
+          const franchise = query.toLowerCase().includes('marvel') ? 'Marvel' :
+                           query.toLowerCase().includes('dc') ? 'DC' :
+                           query.toLowerCase().includes('star wars') ? 'Star Wars' :
+                           query.toLowerCase().includes('star trek') ? 'Star Trek' : 'General';
+          
+          await storeVerifiedResultInRAG(result, category, franchise);
+        } catch (error) {
+          console.error('Failed to store result in RAG:', error);
+        }
+      }
+    }
     
     return response;
   } catch (error) {

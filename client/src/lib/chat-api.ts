@@ -2,15 +2,35 @@ import { apiRequest } from "./queryClient";
 
 // TypeScript declarations for Vite env
 declare global {
+  interface ImportMetaEnv {
+    VITE_NERDALERT_API_URL?: string;
+    VITE_WEBBASE_URL?: string;
+    [key: string]: any;
+  }
+  
   interface ImportMeta {
-    env: Record<string, string>;
+    readonly env: ImportMetaEnv;
   }
 }
 
 const getApiBase = () => {
-  return (process.env.WEBBASE_URL && process.env.WEBBASE_URL !== "/") ?
-  process.env.WEBBASE_URL :
-  window.location.protocol + "//" + window.location.host;
+  // For production, use the Cloudflare setup
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_NERDALERT_API_URL) {
+    return import.meta.env.VITE_NERDALERT_API_URL;
+  }
+  
+  // Check for VITE_WEBBASE_URL (Vite environment variable)
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBBASE_URL && import.meta.env.VITE_WEBBASE_URL !== "/") {
+    return import.meta.env.VITE_WEBBASE_URL;
+  }
+  
+  // Development fallback - use port 80 where the Express server runs
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:80';
+  }
+  
+  // Production fallback - your Cloudflare setup
+  return 'https://nerdalert.app';
 };
 
 const API_BASE = getApiBase();
@@ -135,11 +155,11 @@ export async function sendMessage(
 }
 
 export async function getMessages() {
-  const response = await apiRequest("GET", "/api/messages");
+  const response = await apiRequest("GET", "/memory");
   return response.json();
 }
 
 export async function clearMessages() {
-  const response = await apiRequest("DELETE", "/api/messages");
+  const response = await apiRequest("DELETE", "/memory");
   return response.json();
 }

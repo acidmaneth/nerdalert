@@ -38,7 +38,7 @@ NerdAlert/
 
 ### AI Agent Backend
 - **Pop-Culture Expertise**: Deep knowledge of movies, TV, comics, tech, and geek culture
-- **Real-Time Information**: Web search integration for up-to-date facts and news
+- **Real-Time Information**: Google Custom Search integration for up-to-date facts and news
 - **Energy Matching**: Dynamically adapts to user's enthusiasm and emotional tone
 - **Conversation Memory**: Maintains context across conversations
 - **Enhanced Accuracy**: Comprehensive date validation and fact verification
@@ -57,8 +57,7 @@ NerdAlert/
 
 ### Required API Keys:
 - **LLM API Key**: For AI model interactions (OpenAI, LocalAI, etc.)
-- **Serper API Key**: For web search functionality (recommended)
-- **Brave API Key**: Alternative search provider (optional)
+- **Google API Key + CSE ID**: For Google Custom Search (REQUIRED)
 
 ### Quick Security Setup:
 ```bash
@@ -77,6 +76,7 @@ cp client/env.example client/.env
 ### Prerequisites
 - Node.js (version 16 or higher)
 - npm or yarn package manager
+- Google Custom Search API setup
 
 ### Installation
 
@@ -95,7 +95,7 @@ cp client/env.example client/.env
    
    # Edit the files with your API keys
    # - VITE_NERDALERT_API_URL (for frontend)
-   # - SERPER_API_KEY (for web search)
+   # - GOOGLE_API_KEY + GOOGLE_CSE_ID (for Google search)
    # - LLM_API_KEY (for AI model)
    ```
 
@@ -128,6 +128,10 @@ npm start
 ## 🧪 Testing
 
 ```bash
+# Test Google search configuration
+cd server
+node test-google-only.js
+
 # Run all tests
 npm test
 
@@ -156,9 +160,17 @@ VITE_WALLET_ENABLED=false
 PORT=80
 LLM_API_KEY=your_llm_api_key
 LLM_BASE_URL=your_llm_base_url
-SERPER_API_KEY=your_serper_api_key
+GOOGLE_API_KEY=your_google_api_key
+GOOGLE_CSE_ID=your_google_cse_id
 MODEL=your_model_name
 ```
+
+### Google Custom Search Setup
+
+1. **Get Google API Key**: Visit [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. **Create Custom Search Engine**: Visit [Programmable Search Engine](https://programmablesearchengine.google.com/)
+3. **Configure for entertainment**: Set up search engine to include entertainment sites
+4. **Add to environment**: Set `GOOGLE_API_KEY` and `GOOGLE_CSE_ID` in your `.env` file
 
 ### Customizing the Agent
 Edit `server/src/system-prompt.txt` to customize:
@@ -173,19 +185,20 @@ Edit `server/src/system-prompt.txt` to customize:
 - **Memory Usage**: Optimized for local deployment
 - **Scalability**: Designed for single-user to small-group usage
 - **Reliability**: Robust error handling and recovery
+- **Accuracy**: Google Custom Search provides high-quality, current information
 
 ## 🚀 Deployment
 
-### Vercel Deployment (Frontend)
-1. Connect your GitHub repository to Vercel
+### Frontend Deployment
+1. Connect your GitHub repository to your preferred platform
 2. Set root directory to `client`
 3. Configure environment variables
 4. Deploy automatically on push
 
 ### Backend Deployment
 - **LocalAI**: For privacy-focused local deployment
-- **Cloudflare Workers**: For edge deployment
 - **Traditional VPS**: For full control
+- **Railway/Render/Fly.io**: For cloud deployment
 
 ## 🤝 Contributing
 
@@ -202,7 +215,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **LocalAI** for local model deployment capabilities
-- **Serper API** for web search functionality
+- **Google Custom Search API** for high-quality web search functionality
 - **OpenAI** for API integration patterns
 - **The AI/ML community** for inspiration and best practices
 

@@ -115,7 +115,7 @@ cp server/env.example server/.env
 
 ### Frontend API Configuration
 - Updated to point to `http://localhost:80` for local development
-- Maintains production compatibility with Vercel deployment
+- Maintains production compatibility with various deployment platforms
 - Fixed TypeScript errors with proper type declarations
 
 ### Backend Configuration
@@ -135,7 +135,7 @@ All existing test scripts have been preserved and updated:
 
 ## 🚀 Deployment
 
-### Frontend (Vercel)
+### Frontend Deployment
 - Set root directory to `client`
 - Configure environment variables
 - Automatic deployment on push

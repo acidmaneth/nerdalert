@@ -1,6 +1,6 @@
 {
   "name": "nerdalert-server",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "NerdAlert AI Agent Backend - A specialized AI agent for pop-culture enthusiasts with energy matching, conversation memory, enhanced date accuracy verification, and RAG capabilities",
   "type": "module",
   "main": "dist/index.js",
@@ -31,6 +31,7 @@
     "test-response-formatting": "node test-response-formatting.js",
     "test-wiki-sources": "node test-wiki-sources.cjs",
     "test-current-accuracy": "node test-current-accuracy.js",
+    "test-google-search": "node test-google-search.js",
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts"

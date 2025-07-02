@@ -25,9 +25,23 @@ export default function ChatContainer() {
       
       // Use the same API base as the chat-api.ts
       const getApiBase = () => {
-        return (process.env.WEBBASE_URL && process.env.WEBBASE_URL !== "/") ?
-        process.env.WEBBASE_URL :
-        window.location.protocol + "//" + window.location.host;
+        // For production, use the Cloudflare setup
+        if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_NERDALERT_API_URL) {
+          return import.meta.env.VITE_NERDALERT_API_URL;
+        }
+        
+        // Check for VITE_WEBBASE_URL (Vite environment variable)
+        if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBBASE_URL && import.meta.env.VITE_WEBBASE_URL !== "/") {
+          return import.meta.env.VITE_WEBBASE_URL;
+        }
+        
+        // Development fallback - use port 80 where the Express server runs
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          return 'http://localhost:80';
+        }
+        
+        // Production fallback - your Cloudflare setup
+        return 'https://nerdalert.app';
       };      
       
       const initializeAgent = async () => {
@@ -79,7 +93,7 @@ export default function ChatContainer() {
 
 ---
 
-Hello there! 🎮✨ I'm **NerdAlert**, your AI companion for all things pop-culture, tech, and beyond! Whether you're diving into the latest Marvel theories, exploring sci-fi universes, or just want to chat about your favorite fandoms - I'm here to match your energy and dive deep into whatever gets you excited!
+Hello there! 🎮✨ I'm **NerdAlert**, your AI companion for all things pop-culture, tech, and beyond! Whether you're diving into the latest theories, exploring sci-fi universes, or just want to chat about your favorite fandoms - I'm here to nerd out with you!
 
 **What can we explore together?**
 - 🎬 Movies, TV shows, and streaming recommendations
@@ -89,7 +103,7 @@ Hello there! 🎮✨ I'm **NerdAlert**, your AI companion for all things pop-cul
 - 🎭 Fan theories, trivia, and behind-the-scenes secrets
 - 🔬 Tech trends and futuristic concepts
 
-**Ready to geek out?** Just ask me anything - I'll match your enthusiasm and bring the insider knowledge! 🚀
+**Ready to get the nerd out?** Just ask me anything! 🚀
 
 *What's on your mind today?*`,
             timestamp: new Date()

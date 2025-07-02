@@ -1,6 +1,6 @@
 {
   "name": "nerdalert",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "A specialized AI agent for pop-culture enthusiasts with energy matching, conversation memory, enhanced date accuracy verification, RAG capabilities, and a modern React frontend",
   "type": "module",
   "license": "MIT",

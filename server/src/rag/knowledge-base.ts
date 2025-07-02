@@ -140,105 +140,10 @@ export class NerdAlertKnowledgeBase {
     return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
   }
 
-  // Initialize with some sample data
+  // Initialize with empty data (no hardcoded information)
   initializeSampleData(): void {
-    const sampleEntries: KnowledgeEntry[] = [
-      {
-        id: "deadpool-wolverine-2024",
-        title: "Deadpool & Wolverine",
-        content: "Marvel Studios' Deadpool & Wolverine is the 34th film in the Marvel Cinematic Universe. Directed by Shawn Levy, starring Ryan Reynolds and Hugh Jackman.",
-        category: "movie",
-        franchise: "Marvel",
-        releaseDate: "2024-07-26",
-        status: "released",
-        verified: true,
-        sources: ["marvel.com", "imdb.com"],
-        lastUpdated: "2024-07-26",
-        confidence: "HIGH",
-        canonStatus: "CANON",
-        tags: ["superhero", "comedy", "action"]
-      },
-      {
-        id: "fantastic-four-2025",
-        title: "The Fantastic Four: First Steps",
-        content: "Upcoming Marvel Studios film directed by Matt Shakman, starring Pedro Pascal as Reed Richards and Vanessa Kirby as Sue Storm.",
-        category: "movie",
-        franchise: "Marvel",
-        releaseDate: "2025-02-14",
-        status: "in-production",
-        verified: true,
-        sources: ["marvel.com", "variety.com"],
-        lastUpdated: "2024-12-01",
-        confidence: "HIGH",
-        canonStatus: "CANON",
-        tags: ["superhero", "family", "space"]
-      },
-      {
-        id: "spiderman-origin-comics",
-        title: "Spider-Man Origin Story",
-        content: "Peter Parker was bitten by a radioactive spider and gained spider-like abilities. First appeared in Amazing Fantasy #15 (1962).",
-        category: "character",
-        franchise: "Marvel",
-        status: "established",
-        verified: true,
-        sources: ["marvel.com", "marvel.fandom.com"],
-        lastUpdated: "2024-01-01",
-        confidence: "HIGH",
-        canonStatus: "CANON",
-        tags: ["origin", "radioactive", "spider", "uncle_ben"],
-        triviaType: "origin"
-      },
-      {
-        id: "batman-dark-knight-trivia",
-        title: "The Dark Knight Behind the Scenes",
-        content: "Heath Ledger's Joker performance was inspired by punk rock and A Clockwork Orange. The hospital explosion was real, not CGI.",
-        category: "trivia",
-        franchise: "DC",
-        status: "established",
-        verified: true,
-        sources: ["imdb.com", "variety.com"],
-        lastUpdated: "2024-01-01",
-        confidence: "HIGH",
-        canonStatus: "CANON",
-        tags: ["heath_ledger", "joker", "performance", "explosion"],
-        triviaType: "behind_scenes",
-        verificationScore: 95,
-        sourceAgreement: 8
-      },
-      {
-        id: "star-wars-luke-skywalker",
-        title: "Luke Skywalker Character",
-        content: "Luke Skywalker is the son of Anakin Skywalker and Padmé Amidala. He was raised on Tatooine by Owen and Beru Lars.",
-        category: "character",
-        franchise: "Star Wars",
-        status: "established",
-        verified: true,
-        sources: ["starwars.com", "wookieepedia.org"],
-        lastUpdated: "2024-01-01",
-        confidence: "HIGH",
-        canonStatus: "CANON",
-        tags: ["jedi", "force", "tatooine", "vader"],
-        triviaType: "origin"
-      },
-      {
-        id: "star-trek-kirk-canon",
-        title: "Captain Kirk Canon Information",
-        content: "James T. Kirk served as captain of the USS Enterprise (NCC-1701) during its five-year mission. Born in Riverside, Iowa.",
-        category: "canon_info",
-        franchise: "Star Trek",
-        status: "established",
-        verified: true,
-        sources: ["startrek.com", "memory-alpha.org"],
-        lastUpdated: "2024-01-01",
-        confidence: "HIGH",
-        canonStatus: "CANON",
-        tags: ["enterprise", "captain", "federation", "starfleet"],
-        verificationScore: 98,
-        sourceAgreement: 10
-      }
-    ];
-
-    sampleEntries.forEach(entry => this.addEntry(entry));
+    // No hardcoded data - rely on Google Search API for current information
+    console.log('Knowledge base initialized with no hardcoded data - using Google Search API');
   }
 
   // Enhanced trivia retrieval with type filtering

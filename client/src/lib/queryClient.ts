@@ -3,15 +3,34 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 declare global {
   interface ImportMetaEnv {
     VITE_NERDALERT_API_URL?: string;
+    VITE_WEBBASE_URL?: string;
     [key: string]: any;
+  }
+  
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
   }
 }
 
 // Determine the API base URL based on environment
 const getApiBase = () => {
-  return (process.env.WEBBASE_URL && process.env.WEBBASE_URL !== "/") ?
-  process.env.WEBBASE_URL :
-  window.location.protocol + "//" + window.location.host;
+  // For production, use the Cloudflare setup
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_NERDALERT_API_URL) {
+    return import.meta.env.VITE_NERDALERT_API_URL;
+  }
+  
+  // Check for VITE_WEBBASE_URL (Vite environment variable)
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBBASE_URL && import.meta.env.VITE_WEBBASE_URL !== "/") {
+    return import.meta.env.VITE_WEBBASE_URL;
+  }
+  
+  // Development fallback
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:80';
+  }
+  
+  // Production fallback - your Cloudflare setup
+  return 'https://nerdalert.app';
 };
 
 const API_BASE = getApiBase();

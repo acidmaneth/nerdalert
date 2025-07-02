@@ -55,47 +55,46 @@ The LocalAI Chat UI is just for direct model testing and is optional.
 
 ---
 
-## 2.5. **Frontend Vercel Deployment (For Production)**
+## 2.5. **Frontend Deployment (For Production)**
 
-### Deploy Frontend to Vercel
-1. Go to [vercel.com](https://vercel.com)
-2. Click "New Project"
-3. Import your GitHub repo
-4. Set **Root Directory** to: `NerdAlert/nerdalert-frontend`
-5. Set **Framework Preset** to: `Vite`
-6. Set **Build Command** to: `npm run build`
-7. Set **Output Directory** to: `dist/public`
-8. Set **Install Command** to: `npm install --legacy-peer-deps --force`
+### Deploy Frontend to Your Preferred Platform
+1. Choose your deployment platform (Railway, Render, Fly.io, etc.)
+2. Connect your GitHub repository
+3. Set **Root Directory** to: `client`
+4. Set **Framework Preset** to: `Vite`
+5. Set **Build Command** to: `npm run build`
+6. Set **Output Directory** to: `dist`
+7. Set **Install Command** to: `npm install --legacy-peer-deps --force`
 
 ### Environment Variables Setup
 
-**For Frontend (in Vercel dashboard):**
+**For Frontend (in your deployment platform dashboard):**
 ```bash
-VITE_NERDALERT_API_URL=https://nerdalert.app
+VITE_NERDALERT_API_URL=https://your-deployed-agent.com
 VITE_WALLET_ENABLED=false
 VITE_WALLET_PROJECT_ID=your_wallet_project_id_here
 VITE_WALLET_METADATA_NAME=NerdAlert
 VITE_WALLET_METADATA_DESCRIPTION=Your AI companion for pop-culture
-VITE_WALLET_METADATA_URL=https://nerdalert.app
-VITE_WALLET_METADATA_ICONS=https://nerdalert.app/favicon.ico
+VITE_WALLET_METADATA_URL=https://your-deployed-agent.com
+VITE_WALLET_METADATA_ICONS=https://your-deployed-agent.com/favicon.ico
 NODE_ENV=production
 ```
 
 ### Custom Domain Setup
-1. In Vercel dashboard, go to Settings → Domains
-2. Add your domain: `nerdalert.app`
-3. Update DNS records as instructed by Vercel
+1. In your deployment platform dashboard, go to Settings → Domains
+2. Add your domain: `your-domain.com`
+3. Update DNS records as instructed by your platform
 
 ### Use Cases
 - **Production deployment** - Live, public access to NerdAlert frontend
-- **Custom domains** - Point nerdalert.app to Vercel
-- **Automatic scaling** - Vercel handles traffic spikes
+- **Custom domains** - Point your domain to your deployment platform
+- **Automatic scaling** - Platform handles traffic spikes
 - **SSL certificates** - Automatic HTTPS
 - **Global CDN** - Fast loading worldwide
 
 ### Important Notes
-- **Environment variables** must be set in Vercel dashboard
-- **Agent stays on Cloudflare** - Frontend calls agent at nerdalert.app
+- **Environment variables** must be set in your deployment platform dashboard
+- **Agent deployment** - Deploy your agent separately and update the API URL
 - **Automatic deployments** when you push to GitHub
 - **Wallet disabled by default** - Set VITE_WALLET_ENABLED=false
 
@@ -174,8 +173,8 @@ npm run dev
 # For local development:
 VITE_NERDALERT_API_URL=http://localhost:80
 
-# For production (Cloudflare):
-VITE_NERDALERT_API_URL=https://nerdalert.app
+# For production (Cloud deployment):
+VITE_NERDALERT_API_URL=https://your-deployed-agent.com
 ```
 
 ### Wallet Configuration
@@ -203,45 +202,23 @@ alias start-nerdalert="cd /Users/acidman/EAI/NerdAlert/nerdalert-agent && npm ru
 alias start-frontend="cd /Users/acidman/EAI/NerdAlert/nerdalert-frontend && npm run dev"
 alias cleanup-ai="cd /Users/acidman/EAI && ./cleanup-local-ai.sh"
 
-## **Next Steps: Use Your Existing Tunnel**
+## **Next Steps: Deploy Your Agent**
 
-### 1. **Find Your Credentials File**
-Run:
-```bash
-ls ~/.cloudflared/
-```
-Look for a file named `5336075a-f3bd-4f0d-808e-f650b6629b27.json`
+### 1. **Choose Your Deployment Platform**
+- **Railway**: Easy deployment with automatic scaling
+- **Render**: Free tier available, good for small projects
+- **Fly.io**: Global edge deployment
+- **Traditional VPS**: Full control over your deployment
 
-### 2. **Edit/Create Your Config File**
-Edit `~/.cloudflared/config.yml` to:
-```yaml
-tunnel: nerdalert-tunnel
-credentials-file: /Users/acidman/.cloudflared/5336075a-f3bd-4f0d-808e-f650b6629b27.json
+### 2. **Deploy Your Agent**
+Follow the platform-specific instructions to deploy your NerdAlert agent backend.
 
-ingress:
-  - hostname: nerdalert.app
-    service: http://localhost:80
-  - service: http_status:404
-```
+### 3. **Update Frontend Configuration**
+Once deployed, update your frontend environment variables with your agent's URL.
 
-### 3. **Route DNS (if not already done)**
-```bash
-cloudflared tunnel route dns nerdalert-tunnel nerdalert.app
-```
-This will ensure your DNS is set up correctly.
-
-### 4. **Run the Tunnel**
-```bash
-cloudflared tunnel run nerdalert-tunnel
-```
+### 4. **Test Your Deployment**
+Ensure your frontend can communicate with your deployed agent.
 
 ---
 
-## **If You Want to Use the Other Tunnel**
-Just change the `tunnel:` and `credentials-file:` in your config to match the other tunnel's ID and name.
-
----
-
-**Once you do this, your tunnel will be live and your domain will point to your local port 80!**
-
-Let me know if you want to use a different tunnel, or if you need help with any of these steps. 
+**Your NerdAlert agent is now ready for production use!** 
